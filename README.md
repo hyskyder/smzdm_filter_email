@@ -8,7 +8,7 @@
 # 配置文件 config.ini
 待补充
 
-#其他
+# 其他
 
 平台：
 * python 2.7.6 (ubuntu)
