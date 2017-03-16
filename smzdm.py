@@ -80,9 +80,9 @@ def get_config():
 	config['max_num_item']=max(5,config['max_num_item'])
 	config['append_log']=ini.getboolean('advance','append_log')
 
-	# Read history.ini
+	# Read history.log
 	ini=iniParser.ConfigParser()
-	ini.read('history.ini')
+	ini.read('history.log')
 	if ini.has_section('history'):
 		config['last_timesort']=ini.getint('history','last_timesort')
 	else:
@@ -193,7 +193,7 @@ def filterkeyword(data,wordlist):
 	return data
 
 
-def gen_html(data,log_file):
+def gen_html(data,log_file,if_log):
 	itemlisthtml=''
 	for item in data['itemlist']:
 		itemlisthtml=itemlisthtml+itemhtml.format(
@@ -208,10 +208,10 @@ def gen_html(data,log_file):
 		)
 
 	dumplog=''
-	if 
-	with open(log_file,'r') as f:
-		for line in f.readlines():
-			dumplog=dumplog+line+'<br>\n'
+	if if_log:
+		with open(log_file,'r') as f:
+			for line in f.readlines():
+				dumplog=dumplog+line+'<br>\n'
 
 	htmlpage=page.format(
 		title="SMZDM",
@@ -256,7 +256,7 @@ def set_history(smzdm_timesort):
 	hist=iniParser.RawConfigParser()
 	hist.add_section('history')
 	hist.set('history','last_timesort',str(smzdm_timesort))
-	with open('history.ini','wb') as hini:
+	with open('history.log','wb') as hini:
 		hist.write(hini)
 
 
