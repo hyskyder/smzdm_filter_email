@@ -11,7 +11,6 @@ except:
 
 import time
 import datetime
-import codecs
 import os.path
 import json
 import requests
