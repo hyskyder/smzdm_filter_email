@@ -32,9 +32,9 @@ page='''<html><head> <meta charset="UTF-8"></head>
 '''
 
 itemhtml='''<tr>
-<td><a href="{link}"><img src="{picurl}" alt="" width="200" height="200" /></a></td>
+<td><a href="{link}"><img src="{picurl}" alt="" width="190" height="190" /></a></td>
 <td><p>{channel}  {time}</p>
-<h2>{name}</h2> <p>{price}</p> <p>{worth}/{unworth}</p></td>
+<h2>{name}</h2> <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
 </tr>
 '''
 
@@ -88,7 +88,7 @@ def get_config():
 		config['last_timesort']=0
 	
 	#print config
-	INFO(str(len(config['filter']))+' items:' + ' '.join(config['filter']))
+	INFO(str(len(config['filter']))+' items:' + '|'.join(config['filter']))
 	return config
 
 
@@ -119,6 +119,8 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 
 
 	data = json.loads(r.text)
+	#with open('data.json','w') as f:
+	#	json.dump(data,f)
 
 	itemlist = []
 	num_get=0
@@ -134,7 +136,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 		if timeout or soldout:
 			num_ignore=num_ignore+1
 			continue;
-		if item['timesort']<=after_timesort or item['timesort']<=after_timesort:
+		if item['timesort']<after_timesort:
 			continue;
 
 		#title = item['article_title']
@@ -143,8 +145,10 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 		picurl= '' if (not u'article_pic' in item.keys()) else item['article_pic']
 		price = '' if (not u'article_price' in item.keys()) else item['article_price']
 		channel='' if (not u'article_channel' in item.keys()) else item['article_channel']
-		worth  = 0 if (not u'article_worthorthy' in item.keys()) else item['article_worthorthy']
+		worth  = 0 if (not u'article_worthy' in item.keys()) else item['article_worthy']
 		unworth= 0 if (not u'article_unworthy' in item.keys()) else item['article_unworthy']
+		comment= 0 if (not u'article_comment' in item.keys()) else item['article_comment']
+
 
 		oneitem = {
 			'title': item['article_title'],
@@ -154,7 +158,8 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 			'price': price,
 			'channel': channel,
 			'worth':worth,
-			'unworth':unworth
+			'unworth':unworth,
+			'comment':comment
 		}
 		#print item['article_title'].encode('utf-8')+' | '+str(oneitem['timesort'])
 		itemlist.append(oneitem)
@@ -185,9 +190,16 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 	}
 
 def filterkeyword(data,wordlist):
+	data['filtedtitle']=[ item['title']
+		for item in data['itemlist']
+		if any(word in item['title'].encode('utf-8') for word in wordlist)
+	]
+    if data['filtedtitle']:
+	   INFO('Filted title:' + '|'.join(data['filtedtitle']))
 	data['itemlist']=[ item 
-		for item in data['itemlist'] 
-		if not any(word in item['title'].encode('utf-8') for word in wordlist)]
+		for item in data['itemlist']
+		if not any(word in item['title'].encode('utf-8') for word in wordlist)
+	]
 	data['num_item']=len(data['itemlist'])
 	return data
 
@@ -203,7 +215,8 @@ def gen_html(data,log_file,if_log):
 			name=item['title'],
 			price=item['price'],
 			worth=item['worth'],
-			unworth=item['unworth']
+			unworth=item['unworth'],
+			comment=item['comment']
 		)
 
 	dumplog=''
@@ -240,7 +253,7 @@ def send_email(config,html_content):
 					"subject": config['email']['subject'],
 					"text": config['email']['subject'],
 					"html": html_content
-	   		 })
+			 })
 			st_code=r.status_code
 		else:
 			return;
@@ -269,8 +282,8 @@ if __name__ == "__main__":
 	#with open('temp.json','r') as f:
 	#	res=json.load(f)
 	res=filterkeyword(res,config['filter'])
-	INFO("get={!s}, ignore={!s}, filter={!s}".format(
-		res['num_get'], res['num_ignore'], res['num_get']-res['num_item'])
+	INFO("item={!s}, get={!s}, ignore={!s}".format(
+		res['num_item'], res['num_get'], res['num_ignore'])
 	)
 	if res['num_item']>0:
 
