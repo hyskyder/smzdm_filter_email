@@ -1,12 +1,12 @@
 [email]
-mailto=wheac@connect.ust.hk
+mailto=your@emial.address
 subject=SMZDM今日
 mode=mailgun
 
 # mailgun mode
-mail_from=postmaster@sandbox3456353438(fake_email)17236bc196da.mailgun.org #
-mailgun_domain=sandbox3456353438(fake_domain)17236bc196da.mailgun.org #
-mailgun_apikey=key-3462456367(fake_key)3675637456746
+mail_from=postmaster@sandbox3456353438(*your_email*)17236bc196da.mailgun.org
+mailgun_domain=sandbox3456353438(*your_domain*)17236bc196da.mailgun.org
+mailgun_apikey=key-3462456367(*your_key*)3675637456746
 
 # STMP mode (Not Supported yet)
 #server=
@@ -24,5 +24,5 @@ keyword1=奶粉|音箱|电视|乐高|滚筒洗衣机|羽绒服|吸顶灯|购车|
 
 
 [advance]
-max_num_item=50
+max_num_item=80
 append_log=1

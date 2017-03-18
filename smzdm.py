@@ -19,7 +19,6 @@ try:
 except:
 	import configparser as iniParser
 
-launch_time=time.ctime()
 log_file='log.log'
 
 page='''<html><head> <meta charset="UTF-8"></head>
@@ -32,8 +31,8 @@ page='''<html><head> <meta charset="UTF-8"></head>
 '''
 
 itemhtml='''<tr>
-<td><a href="{link}"><img src="{picurl}" alt="" width="190" height="190" /></a></td>
-<td><p>{channel}  {time}</p>
+<td><a href="{link}"><img src="{picurl}" alt="" width="170" height="170" /></a></td>
+<td><p>|{channel}| {time} |</p>
 <h2>{name}</h2> <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
 </tr>
 '''
@@ -136,7 +135,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 		if timeout or soldout:
 			num_ignore=num_ignore+1
 			continue;
-		if item['timesort']<after_timesort:
+		if item['timesort']<=after_timesort:
 			continue;
 
 		#title = item['article_title']
@@ -190,12 +189,12 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 	}
 
 def filterkeyword(data,wordlist):
-	data['filtedtitle']=[ item['title']
+	data['filteredtitle']=[ item['title']
 		for item in data['itemlist']
 		if any(word in item['title'].encode('utf-8') for word in wordlist)
 	]
-    if data['filtedtitle']:
-	   INFO('Filted title:' + '|'.join(data['filtedtitle']))
+	if data['filteredtitle']:
+		INFO('Filted title:' + '|'.join(data['filteredtitle']))
 	data['itemlist']=[ item 
 		for item in data['itemlist']
 		if not any(word in item['title'].encode('utf-8') for word in wordlist)
@@ -268,8 +267,8 @@ def set_history(smzdm_timesort):
 	hist=iniParser.RawConfigParser()
 	hist.add_section('history')
 	hist.set('history','last_timesort',str(smzdm_timesort))
-	with open('history.log','wb') as hini:
-		hist.write(hini)
+	with open('history.log','wb') as h:
+		hist.write(h)
 
 
 if __name__ == "__main__":
@@ -298,4 +297,4 @@ if __name__ == "__main__":
 	else:
 		INFO("No matching item, quit.")
 
-	INFO("Task finished at " + time.ctime())
+	INFO("Task finished.")
