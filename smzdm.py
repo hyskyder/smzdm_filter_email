@@ -31,9 +31,8 @@ page='''<html><head> <meta charset="UTF-8"></head>
 '''
 
 itemhtml='''<tr>
-<td><a href="{link}"><img src="{picurl}" alt="" width="170" height="170" /></a></td>
-<td><p>|{channel}| {time} |</p>
-<h2>{name}</h2> <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
+<td><a href="{link}"><img src="{picurl}" alt="" width="165" height="165" /></a></td>
+<td><p>|{channel}| {time} |</p> <h2>{name}</h2> <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
 </tr>
 '''
 
@@ -74,8 +73,8 @@ def get_config():
 	for tupl in ini.items('filter'):
 		config['filter']=config['filter']+tupl[1].split('|')
 	config['filter']=filter(None, config['filter']) # remove empty elements
-	config['max_num_item']=ini.getint('advance','max_num_item')
-	config['max_num_item']=max(5,config['max_num_item'])
+	config['max_num_get']=ini.getint('advance','max_num_get')
+	config['max_num_get']=max(5,config['max_num_get'])
 	config['append_log']=ini.getboolean('advance','append_log')
 
 	# Read history.log
@@ -87,7 +86,11 @@ def get_config():
 		config['last_timesort']=0
 	
 	#print config
-	INFO(str(len(config['filter']))+' items:' + '|'.join(config['filter']))
+	INFO( "last_timesort={tm!s}; {num_word!s} keywords:{word_list};".format(
+			tm=config['last_timesort'],
+			num_word=len(config['filter']),
+			word_list='|'.join(config['filter'])
+		))
 	return config
 
 
@@ -194,7 +197,7 @@ def filterkeyword(data,wordlist):
 		if any(word in item['title'].encode('utf-8') for word in wordlist)
 	]
 	if data['filteredtitle']:
-		INFO('Filted title:' + '|'.join(data['filteredtitle']))
+		INFO('Filtered title:' + '|'.join(data['filteredtitle']))
 	data['itemlist']=[ item 
 		for item in data['itemlist']
 		if not any(word in item['title'].encode('utf-8') for word in wordlist)
@@ -274,7 +277,7 @@ def set_history(smzdm_timesort):
 if __name__ == "__main__":
 	INFO("Launch Task.")
 	config=get_config()
-	res=get_data(config['max_num_item'],int(time.time()*100),config['last_timesort'])
+	res=get_data(config['max_num_get'],int(time.time()*100),config['last_timesort'])
 	#with open('temp.json','w') as f:
 	#	json.dump(res,f)
 	#res={}

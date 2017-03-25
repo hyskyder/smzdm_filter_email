@@ -1,16 +1,41 @@
 # smzdm_filter_email
-过滤什么值得买优惠信息，发给给指定邮箱。
+过滤什么值得买(SMZDM)优惠信息，发送邮件给指定邮箱。
+
+![效果](https://goo.gl/photos/oaWvteDrVAQDVsGc9 "效果图")
 
 # 调用
 1. 准备config.ini
 2. python smzdm.py
 
 # 配置文件 config.ini
-待补充
+``` ini
+[email]
+#脚本将以此邮箱的身份发送邮件:
+mailto=your@emial.address 
+#邮件标题:
+subject=SMZDM今日  
+#暂时只支持通过mailgun服务发送邮件:
+mode=mailgun      
 
-# 其他
+# mailgun mode
+mail_from=postmaster@sandbox3456353438(*your_email*)17236bc196da.mailgun.org
+mailgun_domain=sandbox3456353438(*your_domain*)17236bc196da.mailgun.org
+mailgun_apikey=key-3462456367(*your_key*)3675637456746
 
-平台：
+[filter]
+任意类别=任意关键字1|关键字2|关键字3|....
+任意类别=任意关键字a|关键字b|关键字c|....
+#[filter]下的任何关键字都将成为过滤字符串. '类别'仅作为用户分类方便设置.
+
+[advance]
+#脚本一次执行最多从什么值得买取得几条优惠信息:
+max_num_get=180
+#是否在邮件末尾附上运行LOG:
+append_log=1
+
+```
+
+已测试平台：
 * python 2.7.6 (ubuntu)
 * python 2.7.13 (windows)
 
