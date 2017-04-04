@@ -1,28 +1,26 @@
 [email]
-mailto=your@emial.address
+#脚本将以此邮箱的身份发送邮件:
+mailto=your@email.address 
+#邮件标题:
 subject=SMZDM今日
+#暂时只支持通过mailgun服务发送邮件:
 mode=mailgun
 
 # mailgun mode
-mail_from=postmaster@sandbox3456353438(*your_email*)17236bc196da.mailgun.org
-mailgun_domain=sandbox3456353438(*your_domain*)17236bc196da.mailgun.org
+mail_from=postmaster@sandbox3456353438(*your_email*)17236bc196ofi.mailgun.org
+mailgun_domain=sandbox3456353438(*your_domain*)17236bc196re.mailgun.org
 mailgun_apikey=key-3462456367(*your_key*)3675637456746
 
-# STMP mode (Not Supported yet)
-#server=
-#port=
-#user=
-#pwd=
-
 [filter]
-keyword0=葡萄酒|全脂牛奶|
-keyword1=奶粉|音箱|电视|乐高|滚筒洗衣机|羽绒服|吸顶灯|购车|儿童餐具|猫粮
-
-#[notify]
-#keyword=
-# ( Not Supported yet )
-
+我不想看看到这些食品=葡萄酒|全脂牛奶|奶粉|
+AlsoNotWantToSee=音箱|电视|乐高|滚筒洗衣机|羽绒服|吸顶灯|购车|儿童餐具|猫粮
+任意类别=任意关键字1|关键字2|关键字3|....
+任意类别=任意关键字a|关键字b|关键字c|....
+#[filter]下的任何关键字都将成为过滤字符串. '类别'仅为用户分类方便.
 
 [advance]
-max_num_item=180
+#脚本一次执行最多从什么值得买取得几条优惠信息:
+max_num_get=200
+#是否在邮件末尾附上运行LOG:
 append_log=1
+
