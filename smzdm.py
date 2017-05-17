@@ -23,11 +23,18 @@ log_file='log.log'
 
 page='''<html><head> <meta charset="UTF-8"></head>
 <h1>{title}</h1>
+{interesthtml}
 <div><table><tbody>
 {itemhtmllist}
 </tbody></table></div>
 <div></div>
 <div><code>======== LOG ========<br>{dumplog}</code></div></html>
+'''
+
+interesthtml='''<div><p>======== Find Your Interests !!! ========</p></div><div><table><tbody>
+{interestlist}
+</tbody></table></div><div></div>
+<div><p>========== End of Interests ==========</p></div>
 '''
 
 itemhtml='''<tr>
@@ -52,10 +59,12 @@ def tm2str(smzdm_timestamp):
 
 def get_config():
 	config_file='config.ini'
+
 	
 	# Read config.ini
 	if not os.path.isfile(config_file):
 		raise Exception(config_file+' not exist!')
+	INFO("Reading {fullpathcongig!s}".format(fullpathcongig=os.path.abspath(config_file)))
 	ini=iniParser.RawConfigParser()
 	ini.read(config_file)
 	if not ini.has_option('email','mode'):
@@ -69,6 +78,10 @@ def get_config():
 		if not ('mailgun_domain' in config['email'].keys()) or not  ('mailgun_apikey' in config['email'].keys()):
 			raise Exception('missing mailgun_domain or mailgun_apikey.')
 
+	config['interests']=[]
+	for tupl in ini.items('interests'):
+		config['interests']=config['interests']+tupl[1].split('|')
+	config['interests']=filter(None, config['interests']) # remove empty elements
 	config['filter']=[]
 	for tupl in ini.items('filter'):
 		config['filter']=config['filter']+tupl[1].split('|')
@@ -86,8 +99,9 @@ def get_config():
 		config['last_timesort']=0
 	
 	#print config
-	INFO( "last_timesort={tm!s}; {num_word!s} keywords:{word_list};".format(
+	INFO( "last_timesort={tm!s};\n interets={interet_words}; {num_word!s} filters:{word_list};".format(
 			tm=config['last_timesort'],
+			interet_words='|'.join(config['interests']),
 			num_word=len(config['filter']),
 			word_list='|'.join(config['filter'])
 		))
@@ -107,7 +121,16 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 	}
 
 	url = 'http://www.smzdm.com/json_more?timesort=' + str(before_timesort)
-	r = requests.get(url=url, headers=headers)
+	for attempt in range(6):
+		try:
+			r = requests.get(url=url, headers=headers)
+		except requests.exceptions.Timeout:
+			INFO('[WARN] requests.GET Timeout ...')
+			pass
+		except requests.exceptions.RequestException as e:
+			ERROR(str(e))
+		else:
+			break
 
 	if r.status_code !=200:
 		INFO('[WARN] GET respond='+str(r.status_code))
@@ -205,8 +228,38 @@ def filterkeyword(data,wordlist):
 	data['num_item']=len(data['itemlist'])
 	return data
 
+def find_interested(data,wordlist):
+
+	data['interestlist']=[ item
+		for item in data['itemlist']
+		if any(word in item['title'].encode('utf-8') for word in wordlist)
+	]
+	if data['interestlist']:
+		data['itemlist']=[ item 
+			for item in data['itemlist']
+			if not any(word in item['title'].encode('utf-8') for word in wordlist)
+		]
+	data['num_interest']=len(data['interestlist'])
+	return data
+
 
 def gen_html(data,log_file,if_log):
+	interestlisthtml=''
+	for item in data['interestlist']:
+		interestlisthtml=interestlisthtml+itemhtml.format(
+			link=item['smzdm_url'],
+			picurl=item['picurl'],
+			channel=item['channel'],
+			time=tm2str(item['timesort']),
+			name=item['title'],
+			price=item['price'],
+			worth=item['worth'],
+			unworth=item['unworth'],
+			comment=item['comment']
+		)
+	if interestlisthtml:
+		interestlisthtml=interesthtml.format(interestlist=interestlisthtml)
+
 	itemlisthtml=''
 	for item in data['itemlist']:
 		itemlisthtml=itemlisthtml+itemhtml.format(
@@ -229,6 +282,7 @@ def gen_html(data,log_file,if_log):
 
 	htmlpage=page.format(
 		title="SMZDM",
+		interesthtml=interestlisthtml,
 		itemhtmllist=itemlisthtml,
 		dumplog=dumplog
 	)
@@ -262,7 +316,7 @@ def send_email(config,html_content):
 		retry_left=retry_left-1
 
 		if st_code!=200:
-			INFO('Send Email:'+ str(respond))
+			INFO('Send Email:'+ str(r))
 			time.sleep(5)
 	return (st_code==200)
 
@@ -283,11 +337,12 @@ if __name__ == "__main__":
 	#res={}
 	#with open('temp.json','r') as f:
 	#	res=json.load(f)
+	res=find_interested(res,config['interests'])
 	res=filterkeyword(res,config['filter'])
-	INFO("item={!s}, get={!s}, ignore={!s}".format(
-		res['num_item'], res['num_get'], res['num_ignore'])
+	INFO("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
+		res['num_interest'], res['num_item'], res['num_get'], res['num_ignore'])
 	)
-	if res['num_item']>0:
+	if (res['num_interest']+res['num_item'])>0:
 
 		htmlpage=gen_html(res,log_file,config['append_log'])
 		suc=send_email(config,htmlpage)
