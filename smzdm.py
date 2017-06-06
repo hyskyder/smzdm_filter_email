@@ -126,6 +126,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 			r = requests.get(url=url, headers=headers)
 		except requests.exceptions.Timeout:
 			INFO('[WARN] requests.GET Timeout ...')
+			time.sleep(5)
 			pass
 		except requests.exceptions.RequestException as e:
 			ERROR(str(e))
@@ -203,7 +204,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 	}
 
 	if min_timesort>after_timesort and num_get<max_item:
-		time.sleep(2)
+		time.sleep(1)
 		recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort)
 
 	return {
@@ -229,7 +230,10 @@ def filterkeyword(data,wordlist):
 	return data
 
 def find_interested(data,wordlist):
-
+	if( len(wordlist) == 0 ) :
+		data['interestlist']=[]
+		data['num_interest']=0
+		return data
 	data['interestlist']=[ item
 		for item in data['itemlist']
 		if any(word in item['title'].encode('utf-8') for word in wordlist)
