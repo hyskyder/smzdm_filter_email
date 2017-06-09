@@ -60,7 +60,6 @@ def tm2str(smzdm_timestamp):
 def get_config():
 	config_file='config.ini'
 
-	
 	# Read config.ini
 	if not os.path.isfile(config_file):
 		raise Exception(config_file+' not exist!')
@@ -68,7 +67,7 @@ def get_config():
 	ini=iniParser.RawConfigParser()
 	ini.read(config_file)
 	if not ini.has_option('email','mode'):
-		raise Exception('Need [email]mode in '+config_file)
+		raise Exception('Need [email]mode in ' + config_file)
 	if not ini.get('email','mode') in ('mailgun'):
 		raise Exception('Not supported [email]mode')
 	config={}
@@ -77,7 +76,7 @@ def get_config():
 	if config['email']['mode']=='mailgun':
 		if not ('mailgun_domain' in config['email'].keys()) or not  ('mailgun_apikey' in config['email'].keys()):
 			raise Exception('missing mailgun_domain or mailgun_apikey.')
-
+	
 	config['interests']=[]
 	for tupl in ini.items('interests'):
 		config['interests']=config['interests']+tupl[1].split('|')
@@ -86,29 +85,27 @@ def get_config():
 	for tupl in ini.items('filter'):
 		config['filter']=config['filter']+tupl[1].split('|')
 	config['filter']=filter(None, config['filter']) # remove empty elements
-	config['max_num_get']=ini.getint('advance','max_num_get')
+	config['max_num_get']=ini.getint('advance','max_num_get') if ini.has_option('advance','max_num_get') else 100
 	config['max_num_get']=max(5,config['max_num_get'])
-	config['append_log']=ini.getboolean('advance','append_log')
+	config['append_log']= ini.getboolean('advance','append_log') if ini.has_option('advance','append_log') else False
+	config['verbose']   = ini.getint('advance','verbose') if ini.has_option('advance','verbose') else 3
 
 	# Read history.log
 	ini=iniParser.ConfigParser()
 	ini.read('history.log')
-	if ini.has_section('history'):
-		config['last_timesort']=ini.getint('history','last_timesort')
-	else:
-		config['last_timesort']=0
+	config['last_timesort']=ini.getint('history','last_timesort') if ini.has_section('history') else 0
 	
 	#print config
-	INFO( "last_timesort={tm!s};\n interets={interet_words}; {num_word!s} filters:{word_list};".format(
+	INFO( "last_timesort={tm!s};\n interets={interet_words}; {num_word!s} filters{word_list};".format(
 			tm=config['last_timesort'],
 			interet_words='|'.join(config['interests']),
 			num_word=len(config['filter']),
-			word_list='|'.join(config['filter'])
+			word_list=":" + '|'.join(config['filter']) if config['verbose']>=3 else ""
 		))
 	return config
 
 
-def get_data(max_item=100,before_timesort=0,after_timesort=0):
+def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 	before_timesort=max(before_timesort,after_timesort)
 	before_timesort=before_timesort if before_timesort!=0 else int(time.time()*100) 
 	max_timesort=after_timesort
@@ -191,9 +188,10 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 		itemlist.append(oneitem)
 		num_get=num_get+1
 
-	INFO("GET ?sorttime={} : Fetch {} items between {} and {}".format(
-		before_timesort, num_get, max_timesort, min_timesort
-	))
+	if verbose>=3 :
+		INFO("GET ?sorttime={} : Fetch {} items between {} and {}".format(
+			before_timesort, num_get, max_timesort, min_timesort
+		))
 
 	recursion={
 		'itemlist': [],
@@ -205,7 +203,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0):
 
 	if min_timesort>after_timesort and num_get<max_item:
 		time.sleep(1)
-		recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort)
+		recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose)
 
 	return {
 		'itemlist': itemlist+recursion['itemlist'],
@@ -335,7 +333,7 @@ def set_history(smzdm_timesort):
 if __name__ == "__main__":
 	INFO("Launch Task.")
 	config=get_config()
-	res=get_data(config['max_num_get'],int(time.time()*100),config['last_timesort'])
+	res=get_data(config['max_num_get'],int(time.time()*100),config['last_timesort'],config['verbose'])
 	#with open('temp.json','w') as f:
 	#	json.dump(res,f)
 	#res={}
