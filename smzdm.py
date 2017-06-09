@@ -88,7 +88,7 @@ def get_config():
 	config['max_num_get']=ini.getint('advance','max_num_get') if ini.has_option('advance','max_num_get') else 100
 	config['max_num_get']=max(5,config['max_num_get'])
 	config['append_log']= ini.getboolean('advance','append_log') if ini.has_option('advance','append_log') else False
-	config['verbose']   = ini.getint('advance','verbose') if ini.has_option('advance','verbose') else 3
+	config['verbose']   = ini.getint('advance','verbose') if ini.has_option('advance','verbose') else 3    #TODO: maby move to logging.
 
 	# Read history.log
 	ini=iniParser.ConfigParser()
