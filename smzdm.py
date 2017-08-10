@@ -48,14 +48,15 @@ itemhtml='''<tr>
 def ERROR(text):
 	with open(log_file,'a') as f:
 		f.writeline(str(time.ctime())+':[ERRR]'+text+'\n')
-	exit()
+	exit(1)
 
 def INFO(text):
 	with open(log_file,'a') as f:
 		f.write(str(time.ctime())+':[INFO]'+text+'\n')
 
 def tm2str(smzdm_timestamp):
-	return datetime.datetime.fromtimestamp(smzdm_timestamp/100).strftime('%m-%d %H:%M')
+	#return datetime.datetime.fromtimestamp(smzdm_timestamp/100).strftime('%m-%d %H:%M')
+	return datetime.datetime.fromtimestamp(smzdm_timestamp).strftime('%m-%d %H:%M')
 
 def get_config():
 	config_file='config.ini'
@@ -111,13 +112,17 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 	max_timesort=after_timesort
 	min_timesort=before_timesort
 	headers = {
-		'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-		'Accept-Encoding': 'gzip, deflate, sdch',
+		#'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+		'Accept': 'application/json, text/javascript, */*; q=0.01',
+		'Accept-Language':'en-US,en;q=0.5',
+		'Accept-Encoding': 'gzip, deflate',
 		'Host': 'www.smzdm.com',
-		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
+		'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
+		'Referer': 'http://www.smzdm.com/jingxuan/',
+		'X-Requested-With': 'XMLHttpRequest'
 	}
 
-	url = 'http://www.smzdm.com/json_more?timesort=' + str(before_timesort)
+	url = 'http://www.smzdm.com/jingxuan/json_more?filter=s0f0t0b0d0r0p0?timesort=' + str(before_timesort)
 	for attempt in range(6):
 		try:
 			r = requests.get(url=url, headers=headers)
@@ -149,34 +154,37 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 	num_get=0
 	num_ignore=0
 
-	for item in data:
-		max_timesort=max(max_timesort,item['timesort'])
-		min_timesort=min(min_timesort,item['timesort'])
+	for item in data['article_list']:
 		if num_get>=max_item:
 			break;
-		timeout=0 if (not u'article_is_timeout' in item.keys()) else item['article_is_timeout']
-		soldout=0 if (not u'article_is_sold_out' in item.keys()) else item['article_is_sold_out']
-		if timeout or soldout:
-			num_ignore=num_ignore+1
-			continue;
-		if item['timesort']<=after_timesort:
-			continue;
-
+			
 		#title = item['article_title']
 		#smzdm_url = item['article_url']
-		#timesort = item['timesort']
-		picurl= '' if (not u'article_pic' in item.keys()) else item['article_pic']
+		timesort = item['article_timesort']
+		picurl= '' if (not u'article_pic_url' in item.keys()) else item['article_pic_url']
 		price = '' if (not u'article_price' in item.keys()) else item['article_price']
 		channel='' if (not u'article_channel' in item.keys()) else item['article_channel']
 		worth  = 0 if (not u'article_worthy' in item.keys()) else item['article_worthy']
 		unworth= 0 if (not u'article_unworthy' in item.keys()) else item['article_unworthy']
 		comment= 0 if (not u'article_comment' in item.keys()) else item['article_comment']
+		timeout=0 if (not u'article_is_timeout' in item.keys()) else item['article_is_timeout']
+		soldout=0 if (not u'article_is_sold_out' in item.keys()) else item['article_is_sold_out']
+
+		max_timesort=max(max_timesort,timesort)
+		min_timesort=min(min_timesort,timesort)
+
+		if timeout or soldout:
+			num_ignore=num_ignore+1
+			continue;
+		if item['article_timesort']<=after_timesort:
+			continue;
+
 
 
 		oneitem = {
 			'title': item['article_title'],
 			'smzdm_url': item['article_url'],
-			'timesort': item['timesort'],
+			'timesort': timesort,
 			'picurl': picurl,
 			'price': price,
 			'channel': channel,
@@ -201,7 +209,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 		'min_timesort' : before_timesort
 	}
 
-	if min_timesort>after_timesort and num_get<max_item:
+	if min_timesort>after_timesort and num_get<max_item and num_get != 0:
 		time.sleep(1)
 		recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose)
 
@@ -214,6 +222,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 	}
 
 def filterkeyword(data,wordlist):
+	# TODO: change to regex
 	data['filteredtitle']=[ item['title']
 		for item in data['itemlist']
 		if any(word in item['title'].encode('utf-8') for word in wordlist)
@@ -292,6 +301,7 @@ def gen_html(data,log_file,if_log):
 	return htmlpage
 
 def send_email(config,html_content):
+	# TODO: Support direct email
 	st_code=404
 	retry_left=2
 	while(retry_left>0 and st_code!=200):
@@ -333,7 +343,7 @@ def set_history(smzdm_timesort):
 if __name__ == "__main__":
 	INFO("Launch Task.")
 	config=get_config()
-	res=get_data(config['max_num_get'],int(time.time()*100),config['last_timesort'],config['verbose'])
+	res=get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['verbose'])
 	#with open('temp.json','w') as f:
 	#	json.dump(res,f)
 	#res={}
