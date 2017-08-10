@@ -1,0 +1,6 @@
+.git
+.idea
+*.log
+config.ini
+config.ini.bak
+smzdm.bat
