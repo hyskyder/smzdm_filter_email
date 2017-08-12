@@ -12,8 +12,8 @@ except:
 import time
 import datetime
 import os.path
-import json
 import requests
+import logging as LOG
 try:
 	import ConfigParser as iniParser
 except:
@@ -64,7 +64,7 @@ def get_config():
 	# Read config.ini
 	if not os.path.isfile(config_file):
 		raise Exception(config_file+' not exist!')
-	INFO("Reading {fullpathcongig!s}".format(fullpathcongig=os.path.abspath(config_file)))
+	LOG.info("Reading {fullpathcongig!s}".format(fullpathcongig=os.path.abspath(config_file)))
 	ini=iniParser.RawConfigParser()
 	ini.read(config_file)
 	if not ini.has_option('email','mode'):
@@ -106,22 +106,16 @@ def get_config():
 	return config
 
 
-def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
-	before_timesort=max(before_timesort,after_timesort)
-	before_timesort=before_timesort if before_timesort!=0 else int(time.time()*100) 
-	max_timesort=after_timesort
-	min_timesort=before_timesort
+def access_SMZDM_GET():
 	headers = {
-		#'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 		'Accept': 'application/json, text/javascript, */*; q=0.01',
-		'Accept-Language':'en-US,en;q=0.5',
+		'Accept-Language': 'en-US,en;q=0.5',
 		'Accept-Encoding': 'gzip, deflate',
 		'Host': 'www.smzdm.com',
 		'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
 		'Referer': 'http://www.smzdm.com/jingxuan/',
 		'X-Requested-With': 'XMLHttpRequest'
 	}
-
 	url = 'http://www.smzdm.com/jingxuan/json_more?filter=s0f0t0b0d0r0p0?timesort=' + str(before_timesort)
 	for attempt in range(6):
 		try:
@@ -137,18 +131,28 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 
 	if r.status_code !=200:
 		INFO('[WARN] GET respond='+str(r.status_code))
-		return {
-			'itemlist': [],
-			'num_get' : 0,
-			'num_ignore' : 0,
-			'max_timesort' : max_timesort,
-			'min_timesort' : min_timesort
-		}
+		return {}
+
+	data = r.json()
+	if u"article_list" in data.keys():
+		return data[u"article_list"]
+	else:
+		return {}
 
 
-	data = json.loads(r.text)
-	#with open('data.json','w') as f:
-	#	json.dump(data,f)
+
+
+def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
+	before_timesort=max(before_timesort,after_timesort)
+	before_timesort=before_timesort if before_timesort!=0 else int(time.time()*100) 
+	max_timesort=after_timesort
+	min_timesort=before_timesort
+
+
+
+
+	#data = json.loads(r.text)
+
 
 	itemlist = []
 	num_get=0
@@ -341,14 +345,9 @@ def set_history(smzdm_timesort):
 
 
 if __name__ == "__main__":
-	INFO("Launch Task.")
+	print("Launch Task.")
 	config=get_config()
 	res=get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['verbose'])
-	#with open('temp.json','w') as f:
-	#	json.dump(res,f)
-	#res={}
-	#with open('temp.json','r') as f:
-	#	res=json.load(f)
 	res=find_interested(res,config['interests'])
 	res=filterkeyword(res,config['filter'])
 	INFO("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
@@ -367,4 +366,4 @@ if __name__ == "__main__":
 	else:
 		INFO("No matching item, quit.")
 
-	INFO("Task finished.")
+	print("Task finished.")
