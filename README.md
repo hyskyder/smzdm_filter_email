@@ -1,8 +1,6 @@
 # smzdm_filter_email
 过滤什么值得买(SMZDM)优惠信息，发送邮件给指定邮箱。
 
-![效果](https://drive.google.com/file/d/1e03l6Kyg6QCl6_y_vpNvW_lI2lKBTuWzcQ/view?usp=sharing "效果图")
-
 # 调用
 1. 准备config.ini
 2. python smzdm.py
@@ -36,7 +34,7 @@ append_log=1
 ```
 
 已测试平台：
-* python 2.7.6 (ubuntu)
+* python 2.7.12 (ubuntu)
 * python 2.7.13 (windows)
 
 依赖：
