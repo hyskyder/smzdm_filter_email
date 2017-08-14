@@ -19,7 +19,9 @@ try:
 except:
 	import configparser as iniParser
 
-log_file='log.log'
+config_file='config.ini'
+LOG_file='log.log'
+history_file='history.log'
 
 page='''<html><head> <meta charset="UTF-8"></head>
 <h1>{title}</h1>
@@ -46,12 +48,12 @@ itemhtml='''<tr>
 
 
 def ERROR(text):
-	with open(log_file,'a') as f:
+	with open(LOG_file,'a') as f:
 		f.writeline(str(time.ctime())+':[ERRR]'+text+'\n')
 	exit(1)
 
 def INFO(text):
-	with open(log_file,'a') as f:
+	with open(LOG_file,'a') as f:
 		f.write(str(time.ctime())+':[INFO]'+text+'\n')
 
 def tm2str(smzdm_timestamp):
@@ -64,7 +66,7 @@ def get_config():
 	# Read config.ini
 	if not os.path.isfile(config_file):
 		raise Exception(config_file+' not exist!')
-	INFO("Reading {fullpathcongig!s}".format(fullpathcongig=os.path.abspath(config_file)))
+	INFO("Reading {fullpathconfig!s}".format(fullpathconfig=os.path.abspath(config_file)))
 	ini=iniParser.RawConfigParser()
 	ini.read(config_file)
 	if not ini.has_option('email','mode'):
@@ -92,17 +94,18 @@ def get_config():
 	config['verbose']   = ini.getint('advance','verbose') if ini.has_option('advance','verbose') else 3    #TODO: maby move to logging.
 
 	# Read history.log
-	ini=iniParser.ConfigParser()
-	ini.read('history.log')
-	config['last_timesort']=ini.getint('history','last_timesort') if ini.has_section('history') else 0
-	
+	if os.path.isfile(history_file):
+		ini = iniParser.ConfigParser()
+		ini.read(history_file)
+		config['last_timesort'] = ini.getint('history', 'last_timesort') if ini.has_section('history') else 0
+	else:
+		config['last_timesort'] = 0
+
 	#print config
-	INFO( "last_timesort={tm!s};\n interets={interet_words}; {num_word!s} filters{word_list};".format(
-			tm=config['last_timesort'],
-			interet_words='|'.join(config['interests']),
-			num_word=len(config['filter']),
-			word_list=":" + '|'.join(config['filter']) if config['verbose']>=3 else ""
-		))
+	INFO("LOG levle={LogLv}; last_timesort={tm!s}; Num(Interests)={numI!s}; Num(filter)={numF!s}".format(
+			LogLv = config['verbose'], tm = config['last_timesort'], numI=len(config['interests']), numF = len(config['filter'])))
+	# LOG.debug("interests={interest_list}; filters={filter_list}".format(
+	# interest_list='|'.join(config['interests']),filter_list=":" + '|'.join(config['filter'])))
 	return config
 
 
@@ -341,14 +344,9 @@ def set_history(smzdm_timesort):
 
 
 if __name__ == "__main__":
-	INFO("Launch Task.")
+	print("Launch Task.")
 	config=get_config()
 	res=get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['verbose'])
-	#with open('temp.json','w') as f:
-	#	json.dump(res,f)
-	#res={}
-	#with open('temp.json','r') as f:
-	#	res=json.load(f)
 	res=find_interested(res,config['interests'])
 	res=filterkeyword(res,config['filter'])
 	INFO("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
@@ -356,15 +354,15 @@ if __name__ == "__main__":
 	)
 	if (res['num_interest']+res['num_item'])>0:
 
-		htmlpage=gen_html(res,log_file,config['append_log'])
+		htmlpage=gen_html(res,LOG_file,config['append_log'])
 		suc=send_email(config,htmlpage)
 		if suc==1:
 			try:
-				os.remove(log_file)
+				os.remove(LOG_file)
 				set_history(res['max_timesort'])
 			except:
 				pass
 	else:
 		INFO("No matching item, quit.")
 
-	INFO("Task finished.")
+	print("Task finished.")
