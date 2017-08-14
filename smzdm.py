@@ -10,16 +10,19 @@ except:
 	pass
 
 import time
-import datetime
+#import datetime
 import os.path
-import requests
 import logging as LOG
+import requests
 try:
 	import ConfigParser as iniParser
 except:
 	import configparser as iniParser
 
-log_file='log.log'
+
+config_file='config.ini'
+LOG_file='log.log'
+history_file='history.log'
 
 page='''<html><head> <meta charset="UTF-8"></head>
 <h1>{title}</h1>
@@ -43,8 +46,6 @@ itemhtml='''<tr>
 </tr>
 '''
 
-
-
 def ERROR(text):
 	with open(log_file,'a') as f:
 		f.writeline(str(time.ctime())+':[ERRR]'+text+'\n')
@@ -54,17 +55,17 @@ def INFO(text):
 	with open(log_file,'a') as f:
 		f.write(str(time.ctime())+':[INFO]'+text+'\n')
 
-def tm2str(smzdm_timestamp):
-	#return datetime.datetime.fromtimestamp(smzdm_timestamp/100).strftime('%m-%d %H:%M')
-	return datetime.datetime.fromtimestamp(smzdm_timestamp).strftime('%m-%d %H:%M')
+#def tm2str(smzdm_timestamp):
+#	#return datetime.datetime.fromtimestamp(smzdm_timestamp/100).strftime('%m-%d %H:%M')
+#	return datetime.datetime.fromtimestamp(smzdm_timestamp).strftime('%m-%d %H:%M')
 
 def get_config():
-	config_file='config.ini'
+
 
 	# Read config.ini
 	if not os.path.isfile(config_file):
 		raise Exception(config_file+' not exist!')
-	LOG.info("Reading {fullpathcongig!s}".format(fullpathcongig=os.path.abspath(config_file)))
+	print("Reading {fullpathconfig!s}".format(fullpathconfig=os.path.abspath(config_file)))
 	ini=iniParser.RawConfigParser()
 	ini.read(config_file)
 	if not ini.has_option('email','mode'):
@@ -89,24 +90,29 @@ def get_config():
 	config['max_num_get']=ini.getint('advance','max_num_get') if ini.has_option('advance','max_num_get') else 100
 	config['max_num_get']=max(5,config['max_num_get'])
 	config['append_log']= ini.getboolean('advance','append_log') if ini.has_option('advance','append_log') else False
-	config['verbose']   = ini.getint('advance','verbose') if ini.has_option('advance','verbose') else 3    #TODO: maby move to logging.
+	config['verbose']   = ini.getint('advance','verbose') if ini.has_option('advance','verbose') else LOG.ERROR    #TODO: maybe move to logging.
+	LOG.basicConfig(filename=LOG_file,filemode="a",level=config['verbose'],
+					format="[%(levelname)s]%(asctime)s %(lineno)d>%(funcName)s(): %(message)s")
+	LOG.getLogger('requests').setLevel(LOG.WARNING)
 
 	# Read history.log
-	ini=iniParser.ConfigParser()
-	ini.read('history.log')
-	config['last_timesort']=ini.getint('history','last_timesort') if ini.has_section('history') else 0
+	if os.path.isfile(history_file):
+		ini=iniParser.ConfigParser()
+		ini.read(history_file)
+		config['last_timesort']=ini.getint('history','last_timesort') if ini.has_section('history') else 0
+	else:
+		config['last_timesort'] = 0
 	
 	#print config
-	INFO( "last_timesort={tm!s};\n interets={interet_words}; {num_word!s} filters{word_list};".format(
-			tm=config['last_timesort'],
-			interet_words='|'.join(config['interests']),
-			num_word=len(config['filter']),
-			word_list=":" + '|'.join(config['filter']) if config['verbose']>=3 else ""
-		))
+	LOG.info("LOG levle={LogLv}; last_timesort={tm!s}; Num(filter)={numF!s}".format(
+		LogLv=config['verbose'], tm=config['last_timesort'], numF=len(config['filter'])))
+	#LOG.debug("interests={interest_list}; filters={filter_list}".format(
+	#	interest_list='|'.join(config['interests']),filter_list=":" + '|'.join(config['filter'])))
+
 	return config
 
 
-def access_SMZDM_GET():
+def SMZDM_GET(URLtimesort):
 	headers = {
 		'Accept': 'application/json, text/javascript, */*; q=0.01',
 		'Accept-Language': 'en-US,en;q=0.5',
@@ -116,74 +122,45 @@ def access_SMZDM_GET():
 		'Referer': 'http://www.smzdm.com/jingxuan/',
 		'X-Requested-With': 'XMLHttpRequest'
 	}
-	url = 'http://www.smzdm.com/jingxuan/json_more?filter=s0f0t0b0d0r0p0?timesort=' + str(before_timesort)
+	url = 'http://www.smzdm.com/jingxuan/json_more?timesort={TS}?filter=s0f0t0b0d0r0p0'.format(TS=URLtimesort)
 	for attempt in range(6):
 		try:
 			r = requests.get(url=url, headers=headers)
 		except requests.exceptions.Timeout:
-			INFO('[WARN] requests.GET Timeout ...')
+			LOG.warning('requests.GET Timeout ...')
 			time.sleep(5)
 			pass
 		except requests.exceptions.RequestException as e:
-			ERROR(str(e))
+			LOG.error(str(e))
 		else:
 			break
-
 	if r.status_code !=200:
-		INFO('[WARN] GET respond='+str(r.status_code))
+		LOG.warning('GET respond='+str(r.status_code))
 		return {}
 
 	data = r.json()
-	if u"article_list" in data.keys():
-		return data[u"article_list"]
-	else:
+	if not u'article_list' in data.keys():
+		LOG.error("SMZDM GET failed!")
 		return {}
 
+	itemdict={}
+	max_timesort = 0
+	min_timesort = int(time.time())+1
+	for item in data[u'article_list']:
 
-
-
-def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
-	before_timesort=max(before_timesort,after_timesort)
-	before_timesort=before_timesort if before_timesort!=0 else int(time.time()*100) 
-	max_timesort=after_timesort
-	min_timesort=before_timesort
-
-
-
-
-	#data = json.loads(r.text)
-
-
-	itemlist = []
-	num_get=0
-	num_ignore=0
-
-	for item in data['article_list']:
-		if num_get>=max_item:
-			break;
-			
-		#title = item['article_title']
-		#smzdm_url = item['article_url']
 		timesort = item['article_timesort']
-		picurl= '' if (not u'article_pic_url' in item.keys()) else item['article_pic_url']
-		price = '' if (not u'article_price' in item.keys()) else item['article_price']
-		channel='' if (not u'article_channel' in item.keys()) else item['article_channel']
-		worth  = 0 if (not u'article_worthy' in item.keys()) else item['article_worthy']
-		unworth= 0 if (not u'article_unworthy' in item.keys()) else item['article_unworthy']
-		comment= 0 if (not u'article_comment' in item.keys()) else item['article_comment']
-		timeout=0 if (not u'article_is_timeout' in item.keys()) else item['article_is_timeout']
-		soldout=0 if (not u'article_is_sold_out' in item.keys()) else item['article_is_sold_out']
+		id = item['article_id']
+		picurl  = '' if (not u'article_pic_url' in item.keys()) else item['article_pic_url']
+		price   = '' if (not u'article_price' in item.keys()) else item['article_price']
+		channel = '' if (not u'article_channel' in item.keys()) else item['article_channel']
+		worth   = 0 if (not u'article_worthy' in item.keys()) else item['article_worthy']
+		unworth = 0 if (not u'article_unworthy' in item.keys()) else item['article_unworthy']
+		comment = 0 if (not u'article_comment' in item.keys()) else item['article_comment']
+		timeout = 0 if (not u'article_is_timeout' in item.keys()) else item['article_is_timeout']
+		soldout = 0 if (not u'article_is_sold_out' in item.keys()) else item['article_is_sold_out']
 
-		max_timesort=max(max_timesort,timesort)
-		min_timesort=min(min_timesort,timesort)
-
-		if timeout or soldout:
-			num_ignore=num_ignore+1
-			continue;
-		if item['article_timesort']<=after_timesort:
-			continue;
-
-
+		max_timesort = max(max_timesort, timesort)
+		min_timesort = min(min_timesort, timesort)
 
 		oneitem = {
 			'title': item['article_title'],
@@ -192,30 +169,50 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 			'picurl': picurl,
 			'price': price,
 			'channel': channel,
-			'worth':worth,
-			'unworth':unworth,
-			'comment':comment
+			'worth': worth,
+			'unworth': unworth,
+			'comment': comment,
+			'expired': timeout or soldout
 		}
-		#print item['article_title'].encode('utf-8')+' | '+str(oneitem['timesort'])
-		itemlist.append(oneitem)
-		num_get=num_get+1
 
-	if verbose>=3 :
-		INFO("GET ?sorttime={} : Fetch {} items between {} and {}".format(
-			before_timesort, num_get, max_timesort, min_timesort
-		))
+		itemdict.update({id : oneitem})
 
-	recursion={
-		'itemlist': [],
-		'num_get' : 0,
-		'num_ignore' : 0,
-		'max_timesort' : after_timesort,
-		'min_timesort' : before_timesort
+	LOG.debug("GET {N} items, id={minID}~{maxID}, Timesort={minTS}~{maxTS}".format(
+		N=len(itemdict),minID=min(itemdict.keys()),maxID=max(itemdict.keys()),minTS=min_timesort, maxTS=max_timesort))
+	return min_timesort, max_timesort, itemdict
+
+
+def get_data(max_item=100,before_timesort=0,after_timesort=0,interests=[],filter=[]):
+	before_timesort=max(before_timesort,after_timesort)
+	before_timesort=before_timesort if before_timesort!=0 else int(time.time())
+
+	data={ 'itemdict':{},
+		   'num_SMZDM_GET': 0,
+		   'num_ignore': 0,
+		   'max_timesort': 0,
+		   'min_timesort': before_timesort+1
 	}
 
-	if min_timesort>after_timesort and num_get<max_item and num_get != 0:
-		time.sleep(1)
-		recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose)
+	while len(data['itemdict'])<max_item and data['min_timesort']>after_timesort:
+		data['num_SMZDM_GET']=data['num_SMZDM_GET']+1
+		minTS, maxTS, tmpdict=SMZDM_GET(data['min_timesort']-1)
+
+		data['min_timesort'] = min(data['min_timesort'], minTS)
+		data['max_timesort'] = max(data['max_timesort'], maxTS)
+
+		if not set(data['itemdict'].keys()).isdisjoint(set(tmpdict.keys())):
+			LOG.warning("Duplicated item.")
+
+
+
+
+	# if min_timesort>after_timesort and num_get<max_item and num_get != 0:
+	# 	time.sleep(1)
+	# 	recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose)
+
+	LOG.info("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
+		res['num_interest'], res['num_item'], res['num_get'], res['num_ignore'])
+	)
 
 	return {
 		'itemlist': itemlist+recursion['itemlist'],
@@ -347,23 +344,20 @@ def set_history(smzdm_timesort):
 if __name__ == "__main__":
 	print("Launch Task.")
 	config=get_config()
-	res=get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['verbose'])
-	res=find_interested(res,config['interests'])
-	res=filterkeyword(res,config['filter'])
-	INFO("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
-		res['num_interest'], res['num_item'], res['num_get'], res['num_ignore'])
-	)
+	res=get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['interests'],config['filter'])
+
 	if (res['num_interest']+res['num_item'])>0:
 
 		htmlpage=gen_html(res,log_file,config['append_log'])
 		suc=send_email(config,htmlpage)
 		if suc==1:
 			try:
-				os.remove(log_file)
+				with open(LOG_file, 'w'):
+					pass
 				set_history(res['max_timesort'])
 			except:
 				pass
 	else:
-		INFO("No matching item, quit.")
+		LOG.info("No matching item, quit.")
 
 	print("Task finished.")
