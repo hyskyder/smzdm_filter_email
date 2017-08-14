@@ -122,7 +122,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 		'X-Requested-With': 'XMLHttpRequest'
 	}
 
-	url = 'http://www.smzdm.com/jingxuan/json_more?filter=s0f0t0b0d0r0p0?timesort=' + str(before_timesort)
+	url = 'http://www.smzdm.com/jingxuan/json_more?timesort={TS}?filter=s0f0t0b0d0r0p0'.format(TS=before_timesort)
 	for attempt in range(6):
 		try:
 			r = requests.get(url=url, headers=headers)
@@ -145,8 +145,8 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 			'min_timesort' : min_timesort
 		}
 
-
-	data = json.loads(r.text)
+	data=r.json()
+	#data = json.loads(r.text)
 	#with open('data.json','w') as f:
 	#	json.dump(data,f)
 
@@ -156,7 +156,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 
 	for item in data['article_list']:
 		if num_get>=max_item:
-			break;
+			break
 			
 		#title = item['article_title']
 		#smzdm_url = item['article_url']
