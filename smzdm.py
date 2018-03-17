@@ -118,9 +118,9 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 		#'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 		'Accept': 'application/json, text/javascript, */*; q=0.01',
 		'Accept-Language':'en-US,en;q=0.5',
-		'Accept-Encoding': 'gzip, deflate',
+		'Accept-Encoding': 'gzip, deflate, br',
 		'Host': 'www.smzdm.com',
-		'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/55.0',
+		'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/58.0',
 		'Referer': 'http://www.smzdm.com/jingxuan/',
 		'X-Requested-With': 'XMLHttpRequest'
 	}
