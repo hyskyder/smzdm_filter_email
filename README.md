@@ -8,11 +8,11 @@
 # 配置文件 config.ini
 ``` ini
 [email]
-#脚本将以此邮箱的身份发送邮件:
+#脚本将向此邮箱发送邮件:
 mailto=your@email.address 
 #邮件标题:
 subject=SMZDM今日
-#暂时只支持通过mailgun服务发送邮件:
+#只支持通过mailgun服务发送邮件:
 mode=mailgun
 
 # mailgun mode
@@ -24,6 +24,10 @@ mailgun_apikey=key-3462456367(*your_key*)3675637456746
 任意类别=任意关键字1|关键字2|关键字3|....
 任意类别=任意关键字a|关键字b|关键字c|....
 #[filter]下的任何关键字都将成为过滤字符串. '类别'仅为用户分类方便.
+
+[mallfilter]
+我不想看到这些商家平台=平台1|平台2|
+
 
 [advance]
 #脚本一次执行最多从什么值得买取得几条优惠信息:
