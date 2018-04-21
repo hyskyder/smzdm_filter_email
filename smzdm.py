@@ -14,6 +14,8 @@ import datetime
 import os.path
 #import json
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 try:
     import ConfigParser as iniParser
 except:
@@ -117,8 +119,26 @@ def get_config():
 
     return config
 
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
-def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
+def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_session=None):
     before_timesort=max(before_timesort,after_timesort)
     before_timesort=before_timesort if before_timesort!=0 else int(time.time()*100)
     max_timesort=after_timesort
@@ -129,33 +149,25 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         'Accept-Language':'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'www.smzdm.com',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:55.0) Gecko/20100101 Firefox/58.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0',
         'Referer': 'http://www.smzdm.com/jingxuan/',
+        'Cache-Control' : 'no-cache',
         'X-Requested-With': 'XMLHttpRequest'
     }
 
     url = 'http://www.smzdm.com/jingxuan/json_more?timesort={TS}?filter=s0f0t0b0d0r0p0'.format(TS=before_timesort)
-    for attempt in range(6):
-        try:
-            r = requests.get(url=url, headers=headers)
-        except requests.exceptions.Timeout:
-            INFO('[WARN] requests.get() Timeout ...')
-            time.sleep(5)
-            pass
-        except requests.exceptions.RequestException as e:
-            ERROR(str(e))
-        else:
-            break
 
-    if r.status_code !=200:
-        INFO('[WARN] GET respond='+str(r.status_code))
-        return {
-            'itemlist': [],
-            'num_get' : 0,
-            'num_ignore' : 0,
-            'max_timesort' : max_timesort,
-            'min_timesort' : min_timesort
-        }
+    req_session=requests_retry_session(session=req_session)
+    try:
+        r = req_session.get(url=url, headers=headers)
+    # except requests.exceptions.Timeout:
+    #     INFO('[WARN] requests.get() Timeout ...')
+    #     time.sleep(5)
+    #     pass
+    # except requests.exceptions.RequestException as e:
+    #     ERROR(str(e))
+    except Exception as e:
+        ERROR(str(e))
 
     data=r.json()
     #data = json.loads(r.text)
@@ -170,9 +182,6 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         if num_get>=max_item:
             break
 
-        #title = item['article_title']
-        #smzdm_url = item['article_url']
-        timesort = item['article_timesort']
         picurl= '' if (not u'article_pic_url' in item.keys()) else item['article_pic_url']
         price = '' if (not u'article_price' in item.keys()) else item['article_price']
         channel='' if (not u'article_channel' in item.keys()) else item['article_channel']
@@ -203,7 +212,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         oneitem = {
             'title': item['article_title'],
             'smzdm_url': item['article_url'],
-            'timesort': timesort,
+            'timesort': item['article_timesort'],
             'picurl': picurl,
             'price': price,
             'channel': channel,
@@ -232,7 +241,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
 
     if min_timesort>after_timesort and num_get<max_item and num_get != 0:
         time.sleep(0.5)
-        recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose)
+        recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose,req_session=req_session)
 
     return {
         'itemlist': itemlist+recursion['itemlist'],
