@@ -106,10 +106,9 @@ def get_config():
         config['last_timesort'] = 0
 
     #print config
-    INFO("LOG levle={LogLv}; last_timesort={tm!s}; Num(Interests)={numI!s}; Num(filter)={numF!s}".format(
+    INFO("LOG level={LogLv}; last_timesort={tm!s}; Num(Interests)={numI!s}; Num(filter)={numF!s}".format(
             LogLv = config['verbose'], tm = config['last_timesort'], numI=len(config['interests']), numF = len(config['filter'])))
-    # LOG.debug("interests={interest_list}; filters={filter_list}".format(
-    # interest_list='|'.join(config['interests']),filter_list=":" + '|'.join(config['filter'])))
+
     return config
 
 
@@ -199,7 +198,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
             'unworth':unworth,
             'comment':comment
         }
-        #print item['article_title'].encode('utf-8')+' | '+str(oneitem['timesort'])
+
         itemlist.append(oneitem)
         num_get=num_get+1
 
