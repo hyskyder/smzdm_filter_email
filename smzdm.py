@@ -185,12 +185,14 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
         soldout=0 if (not u'article_is_sold_out' in item.keys()) else item['article_is_sold_out']
 
         tags=set()
-        if u'article_tags' in item.keys():
-            for t in item['article_tags']:
-                tags.add(t[u'name'])
-        if u'article_tese_tags' in item.keys():
-            for t in item['article_tese_tags']:
-                tags.add(t[u'name'])
+        for t in item['article_tags'] if u'article_tags' in item.keys() else []:
+            if u'name' in t.keys(): tags.add(t[u'name'])
+        for t in item['article_tese_tags'] if u'article_tese_tags' in item.keys() else []:
+            if u'name' in t.keys(): tags.add(t[u'name'])
+        if u'article_category' in item.keys() and u'title' in item[u'article_category'].keys():
+            tags.add(item[u'article_category'][u'title'])
+        # article_list.gtm.cates_str is not considered yet, because its category has so many tags that
+        #        I am afraid of false positives
         tags=",".join(tags)
 
         max_timesort=max(max_timesort,timesort)
@@ -246,12 +248,13 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
 
 def filter_item(data,field,keywords):
     # TODO: change to regex
-    data['filteredBy'+field]=[ item['title']
+    data['filteredBy'+field]=[
+        "{title}:{tags}-{mall}".format(title=item['title'],tags=item['tags'],mall=item['mall'])
         for item in data['itemlist']
         if any(word in item[field] for word in keywords)
     ]
     if data['filteredBy'+field]:
-        INFO('Filtered items by {}:'.format(field) + '|'.join(data['filteredBy'+field]))
+        INFO('Filtered items by {}: '.format(field) + '|'.join(data['filteredBy'+field]))
     data['itemlist']=[ item
         for item in data['itemlist']
         if not any(word in item[field] for word in keywords)
