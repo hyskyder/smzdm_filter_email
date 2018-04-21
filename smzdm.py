@@ -249,7 +249,7 @@ def filter_item(data,field,keywords):
         if any(word in item[field] for word in keywords)
     ]
     if data['filteredBy'+field]:
-        INFO('Filtered items by <{}>:'.format(field) + '|'.join(data['filteredBy'+field]))
+        INFO('Filtered items by {}:'.format(field) + '|'.join(data['filteredBy'+field]))
     data['itemlist']=[ item
         for item in data['itemlist']
         if not any(word in item[field] for word in keywords)
