@@ -1,6 +1,6 @@
 #
-#coding=utf-8 
 # -*- coding: utf-8 -*-
+#coding=utf-8
 
 import sys
 try:
@@ -109,6 +109,11 @@ def get_config():
     INFO("LOG level={LogLv}; last_timesort={tm!s}; Num(Interests)={numI!s}; Num(filter)={numF!s}".format(
             LogLv = config['verbose'], tm = config['last_timesort'], numI=len(config['interests']), numF = len(config['filter'])))
 
+    if sys.version_info[0]<3:
+        config['mallfilter'] = [unicode(x, 'utf-8') for x in config['mallfilter']]
+        config['filter']=[unicode(x,'utf-8') for x in config['filter']]
+        config['interests']=[unicode(x,'utf-8') for x in config['interests']]
+
     return config
 
 
@@ -133,7 +138,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         try:
             r = requests.get(url=url, headers=headers)
         except requests.exceptions.Timeout:
-            INFO('[WARN] requests.GET Timeout ...')
+            INFO('[WARN] requests.get() Timeout ...')
             time.sleep(5)
             pass
         except requests.exceptions.RequestException as e:
@@ -216,7 +221,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
     }
 
     if min_timesort>after_timesort and num_get<max_item and num_get != 0:
-        time.sleep(1)
+        time.sleep(0.5)
         recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose)
 
     return {
@@ -231,13 +236,13 @@ def filterkeyword(data,wordlist):
     # TODO: change to regex
     data['filteredtitle']=[ item['title']
         for item in data['itemlist']
-        if any(word in item['title'].encode('utf-8') for word in wordlist)
+        if any(word in item['title'] for word in wordlist)
     ]
     if data['filteredtitle']:
         INFO('Filtered title:' + '|'.join(data['filteredtitle']))
     data['itemlist']=[ item
         for item in data['itemlist']
-        if not any(word in item['title'].encode('utf-8') for word in wordlist)
+        if not any(word in item['title'] for word in wordlist)
     ]
     data['num_item']=len(data['itemlist'])
     return data
@@ -245,13 +250,13 @@ def filterkeyword(data,wordlist):
 def filtermall(data,malllist):
     data['filteredtitlebymall']=[ item['title']
         for item in data['itemlist']
-        if any(m in item['mall'].encode('utf-8') for m in malllist)
+        if any(m in item['mall'] for m in malllist)
     ]
     if data['filteredtitlebymall']:
         INFO('Filtered title by mall:' + '|'.join(data['filteredtitlebymall']))
     data['itemlist']=[ item
         for item in data['itemlist']
-        if not any(m in item['mall'].encode('utf-8') for m in malllist)
+        if not any(m in item['mall'] for m in malllist)
     ]
     data['num_item']=len(data['itemlist'])
     return data
@@ -264,12 +269,12 @@ def find_interested(data,wordlist):
         return data
     data['interestlist']=[ item
         for item in data['itemlist']
-        if any(word in item['title'].encode('utf-8') for word in wordlist)
+        if any(word in item['title'] for word in wordlist)
     ]
     if data['interestlist']:
         data['itemlist']=[ item
             for item in data['itemlist']
-            if not any(word in item['title'].encode('utf-8') for word in wordlist)
+            if not any(word in item['title'] for word in wordlist)
         ]
     data['num_interest']=len(data['interestlist'])
     return data
@@ -347,7 +352,7 @@ def send_email(config,html_content):
              })
             st_code=r.status_code
         else:
-            return;
+            return
         retry_left=retry_left-1
 
         if st_code!=200:
