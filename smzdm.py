@@ -12,7 +12,6 @@ except:
 import time
 import datetime
 import os.path
-#import json
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -120,16 +119,14 @@ def get_config():
     return config
 
 def requests_retry_session(
-    retries=3,
+    retries=4,
     backoff_factor=0.3,
     status_forcelist=(500, 502, 504),
     session=None,
 ):
     session = session or requests.Session()
     retry = Retry(
-        total=retries,
-        read=retries,
-        connect=retries,
+        total=retries, read=retries, connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
     )
@@ -182,6 +179,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
         if num_get>=max_item:
             break
 
+        timesort=item['article_timesort']
         picurl= '' if (not u'article_pic_url' in item.keys()) else item['article_pic_url']
         price = '' if (not u'article_price' in item.keys()) else item['article_price']
         channel='' if (not u'article_channel' in item.keys()) else item['article_channel']
@@ -212,7 +210,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
         oneitem = {
             'title': item['article_title'],
             'smzdm_url': item['article_url'],
-            'timesort': item['article_timesort'],
+            'timesort': timesort,
             'picurl': picurl,
             'price': price,
             'channel': channel,
@@ -240,7 +238,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
     }
 
     if min_timesort>after_timesort and num_get<max_item and num_get != 0:
-        time.sleep(0.5)
+        time.sleep(0.1)
         recursion=get_data(max_item-num_get, min_timesort-1 ,after_timesort,verbose,req_session=req_session)
 
     return {
