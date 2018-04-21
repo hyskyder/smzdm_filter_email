@@ -12,7 +12,7 @@ except:
 import time
 import datetime
 import os.path
-import json
+#import json
 import requests
 try:
     import ConfigParser as iniParser
@@ -49,7 +49,7 @@ itemhtml='''<tr>
 
 def ERROR(text):
     with open(LOG_file,'a') as f:
-        f.writeline(str(time.ctime())+':[ERRR]'+text+'\n')
+        f.write(str(time.ctime())+':[ERRR]'+text+'\n')
     exit(1)
 
 def INFO(text):
