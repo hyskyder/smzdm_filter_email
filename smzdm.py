@@ -41,7 +41,8 @@ interesthtml='''<div><p>======== Find Your Interests !!! ========</p></div><div>
 
 itemhtml='''<tr>
 <td><a href="{link}"><img src="{picurl}" alt="" width="165" height="165" /></a></td>
-<td><p>|{channel}|{mall}|{time}|</p> <h2>{name}</h2> <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
+<td><p>|{channel}|{mall}|{time}|<small>{tags}</small></p> <h2>{name}</h2>
+    <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
 </tr>
 '''
 
@@ -182,14 +183,22 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         timeout=0 if (not u'article_is_timeout' in item.keys()) else item['article_is_timeout']
         soldout=0 if (not u'article_is_sold_out' in item.keys()) else item['article_is_sold_out']
 
+        tags=set()
+        if u'article_tags' in item.keys():
+            for t in item['article_tags']:
+                tags.add(t[u'name'])
+        if u'article_tese_tags' in item.keys():
+            for t in item['article_tese_tags']:
+                tags.add(t[u'name'])
+
         max_timesort=max(max_timesort,timesort)
         min_timesort=min(min_timesort,timesort)
 
         if timeout or soldout:
             num_ignore=num_ignore+1
-            continue;
+            continue
         if item['article_timesort']<=after_timesort:
-            continue;
+            continue
 
         oneitem = {
             'title': item['article_title'],
@@ -198,6 +207,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
             'picurl': picurl,
             'price': price,
             'channel': channel,
+            'tags': tags,
             'mall': mall,
             'worth':worth,
             'unworth':unworth,
@@ -208,7 +218,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         num_get=num_get+1
 
     if verbose>=3 :
-        INFO("GET ?sorttime={} : Fetch {} items between {} and {}".format(
+        INFO("GET sorttime={} : Fetch {} items between {} and {}".format(
             before_timesort, num_get, max_timesort, min_timesort
         ))
 
@@ -232,35 +242,20 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0):
         'min_timesort' : min(min_timesort,recursion['min_timesort'])
     }
 
-def filterkeyword(data,wordlist):
+def filter_item(data,field,keywords):
     # TODO: change to regex
-    data['filteredtitle']=[ item['title']
+    data['filteredBy'+field]=[ item['title']
         for item in data['itemlist']
-        if any(word in item['title'] for word in wordlist)
+        if any(word in item[field] for word in keywords)
     ]
-    if data['filteredtitle']:
-        INFO('Filtered title:' + '|'.join(data['filteredtitle']))
+    if data['filteredBy'+field]:
+        INFO('Filtered items by <{}>:'.format(field) + '|'.join(data['filteredBy'+field]))
     data['itemlist']=[ item
         for item in data['itemlist']
-        if not any(word in item['title'] for word in wordlist)
+        if not any(word in item[field] for word in keywords)
     ]
     data['num_item']=len(data['itemlist'])
     return data
-
-def filtermall(data,malllist):
-    data['filteredtitlebymall']=[ item['title']
-        for item in data['itemlist']
-        if any(m in item['mall'] for m in malllist)
-    ]
-    if data['filteredtitlebymall']:
-        INFO('Filtered title by mall:' + '|'.join(data['filteredtitlebymall']))
-    data['itemlist']=[ item
-        for item in data['itemlist']
-        if not any(m in item['mall'] for m in malllist)
-    ]
-    data['num_item']=len(data['itemlist'])
-    return data
-
 
 def find_interested(data,wordlist):
     if( len(wordlist) == 0 ) :
@@ -281,37 +276,31 @@ def find_interested(data,wordlist):
 
 
 def gen_html(data,log_file,if_log):
-    interestlisthtml=''
-    for item in data['interestlist']:
-        interestlisthtml=interestlisthtml+itemhtml.format(
+    def format_one_item(item):
+        return itemhtml.format(
             link=item['smzdm_url'],
             picurl=item['picurl'],
             channel=item['channel'],
+            mall=item['mall'],
             time=tm2str(item['timesort']),
+            tags=",".join(item['tags']),
             name=item['title'],
             price=item['price'],
             worth=item['worth'],
-            mall=item['mall'],
             unworth=item['unworth'],
             comment=item['comment']
         )
+
+    interestlisthtml=''
+    for item in data['interestlist']:
+        interestlisthtml=interestlisthtml+format_one_item(item)
+
     if interestlisthtml:
         interestlisthtml=interesthtml.format(interestlist=interestlisthtml)
 
     itemlisthtml=''
     for item in data['itemlist']:
-        itemlisthtml=itemlisthtml+itemhtml.format(
-            link=item['smzdm_url'],
-            picurl=item['picurl'],
-            channel=item['channel'],
-            time=tm2str(item['timesort']),
-            name=item['title'],
-            price=item['price'],
-            worth=item['worth'],
-            mall=item['mall'],
-            unworth=item['unworth'],
-            comment=item['comment']
-        )
+        itemlisthtml=itemlisthtml+format_one_item(item)
 
     dumplog=''
     if if_log:
@@ -371,10 +360,12 @@ def set_history(smzdm_timesort):
 if __name__ == "__main__":
     print("Launch Task.")
     config=get_config()
-    res=get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['verbose'])
-    res=find_interested(res,config['interests'])
-    res=filterkeyword(res,config['filter'])
-    res=filtermall(res, config['mallfilter'])
+    res = get_data(config['max_num_get'],int(time.time()),config['last_timesort'],config['verbose'])
+    res = find_interested(res,config['interests'])
+    res = filter_item(res,field='title',keywords=config['filter'])
+    res = filter_item(res,field='tags', keywords=config['filter'])
+    res = filter_item(res,field='mall', keywords=config['mallfilter'])
+
     INFO("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
         res['num_interest'], res['num_item'], res['num_get'], res['num_ignore'])
     )
