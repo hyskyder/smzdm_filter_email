@@ -266,12 +266,12 @@ def find_interested(data,wordlist):
         return data
     data['interestlist']=[ item
         for item in data['itemlist']
-        if any(word in item['title'] for word in wordlist)
+        if any(word in item['title'] or word in item['tags'] for word in wordlist)
     ]
     if data['interestlist']:
         data['itemlist']=[ item
             for item in data['itemlist']
-            if not any(word in item['title'] for word in wordlist)
+            if not any(word in item['title'] or word in item['tags'] for word in wordlist)
         ]
     data['num_interest']=len(data['interestlist'])
     return data
