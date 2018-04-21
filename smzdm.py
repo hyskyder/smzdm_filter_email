@@ -157,12 +157,6 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
     req_session=requests_retry_session(session=req_session)
     try:
         r = req_session.get(url=url, headers=headers)
-    # except requests.exceptions.Timeout:
-    #     INFO('[WARN] requests.get() Timeout ...')
-    #     time.sleep(5)
-    #     pass
-    # except requests.exceptions.RequestException as e:
-    #     ERROR(str(e))
     except Exception as e:
         ERROR(str(e))
 
@@ -197,6 +191,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
         if u'article_tese_tags' in item.keys():
             for t in item['article_tese_tags']:
                 tags.add(t[u'name'])
+        tags=",".join(tags)
 
         max_timesort=max(max_timesort,timesort)
         min_timesort=min(min_timesort,timesort)
@@ -290,7 +285,7 @@ def gen_html(data,log_file,if_log):
             channel=item['channel'],
             mall=item['mall'],
             time=tm2str(item['timesort']),
-            tags=",".join(item['tags']),
+            tags=item['tags'],
             name=item['title'],
             price=item['price'],
             worth=item['worth'],
