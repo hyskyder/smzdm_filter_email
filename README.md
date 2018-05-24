@@ -12,7 +12,7 @@
 mailto=your@email.address 
 #邮件标题:
 subject=SMZDM今日
-#只支持通过mailgun服务发送邮件:
+#目前只支持通过mailgun服务发送邮件:
 mode=mailgun
 
 # mailgun mode
@@ -20,9 +20,14 @@ mail_from=postmaster@sandbox3456353438(*your_email*)17236bc196da.mailgun.org
 mailgun_domain=sandbox3456353438(*your_domain*)17236bc196da.mailgun.org
 mailgun_apikey=key-3462456367(*your_key*)3675637456746
 
+
+# 感兴趣的物品将会在邮件中置顶
+[interests]
+MyInterets=你感兴趣的关键字A|关键字B
+
 [filter]
-任意类别=任意关键字1|关键字2|关键字3|....
-任意类别=任意关键字a|关键字b|关键字c|....
+任意类别A=任意关键字1|关键字2|关键字3|....
+任意类别B=任意关键字a|关键字b|关键字c|....
 #[filter]下的任何关键字都将成为过滤字符串. '类别'仅为用户分类方便.
 
 [mallfilter]
@@ -34,6 +39,8 @@ mailgun_apikey=key-3462456367(*your_key*)3675637456746
 max_num_get=200
 #是否在邮件末尾附上运行LOG:
 append_log=1
+#运行LOG的详细程度 
+verbose=2
 
 ```
 

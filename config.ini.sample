@@ -11,18 +11,23 @@ mail_from=postmaster@sandbox3456353438(*your_email*)17236bc196ofi.mailgun.org
 mailgun_domain=sandbox3456353438(*your_domain*)17236bc196re.mailgun.org
 mailgun_apikey=key-3462456367(*your_key*)3675637456746
 
+[interests]
+MyInterets=椰汁|Airism
+
 [filter]
 我不想看到这些食品=葡萄酒|全脂牛奶|奶粉|
 AlsoDoNotWantToSee=音箱|电视|乐高|滚筒洗衣机|羽绒服|吸顶灯|购车|儿童餐具|猫粮
-任意类别=任意关键字1|关键字2|关键字3|
-任意类别=任意关键字a|关键字b|关键字c|
+任意类别A=任意关键字1|关键字2|关键字3
+任意类别B=任意关键字a|关键字b|关键字c
 #[filter]下的任何关键字都将成为过滤字符串. '类别'仅为用户分类方便.
 
 [mallfilter]
-我不想看到这些商家平台=平台1|平台2|
+我不想看到这些商家平台=平台1|平台2
 
 [advance]
 #脚本一次执行最多从什么值得买取得几条优惠信息:
 max_num_get=200
 #是否在邮件末尾附上运行LOG:
 append_log=1
+#运行LOG的详细程度 (1 ~ 3)
+verbose=2
