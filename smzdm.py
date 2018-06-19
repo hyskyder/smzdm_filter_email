@@ -24,14 +24,20 @@ config_file='config.ini'
 LOG_file='log.log'
 history_file='history.log'
 
-page='''<html><head> <meta charset="UTF-8"></head>
+page='''<html>
+<head><meta charset="UTF-8"></head>
+<body>
 <h1>{title}</h1>
 {interesthtml}
 <div><table><tbody>
 {itemhtmllist}
 </tbody></table></div>
 <div></div>
-<div><code>======== LOG ========<br>{dumplog}</code></div></html>
+<div><code style="font-size:10px">
+======== LOG ========<br>
+{dumplog}</code></div>
+</body>
+</html>
 '''
 
 interesthtml='''<div><p>======== Find Your Interests !!! ========</p></div><div><table><tbody>
