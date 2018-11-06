@@ -25,7 +25,42 @@ LOG_file='log.log'
 history_file='history.log'
 
 page='''<html>
-<head><meta charset="UTF-8"></head>
+<head><meta charset="UTF-8">
+<style>
+    .itempic {{
+            width: 125px;
+    }}
+    @media only screen and (max-width: 480px) {{
+        .itempic {{
+            width: 100px;
+        }}
+        h2 {{
+          font-size: 1.25em;
+        }}
+    }}
+    @media only screen and (min-width: 481px) and (max-width: 767px) {{
+        h2 {{
+          font-size: 1.5em;
+        }}
+    }}
+    @media only screen and (min-width: 768px) {{
+        .itempic {{
+            width: 140px;
+        }}
+    }}
+
+    .unstyle-auto-detected-links * {{
+        border-bottom: 0 !important;
+        cursor: default !important;
+        color: inherit !important;
+        text-decoration: none !important;
+    }}
+
+    .hrline {{
+        border-bottom: 1px solid #caecf0;
+    }}
+</style>
+</head>
 <body>
 <h1>{title}</h1>
 {interesthtml}
@@ -47,9 +82,11 @@ interesthtml='''<div><p>======== Find Your Interests !!! ========</p></div><div>
 '''
 
 itemhtml='''<tr>
-<td><a href="{link}"><img src="{picurl}" alt="" width="165" height="165" /></a></td>
-<td><p>|{channel}|{mall}|{time}|<small>{tags}</small></p> <h2>{name}</h2>
-    <p>{price}</p> <p>{worth} / {unworth}, #{comment}</p></td>
+<td><a href="{link}"><img src="{picurl}" alt="Pic" class="itempic" /></a></td>
+<td class="hrline"><h2 class="unstyle-auto-detected-links">{name}</h2>
+    <p class="unstyle-auto-detected-links">{worth} / {unworth}, #{comment}<br>
+    {price}<br>
+    <small>|{channel}|{mall}|{time}|{tags}</small></p></td>
 </tr>
 '''
 
