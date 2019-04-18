@@ -128,15 +128,15 @@ def get_config():
     config['interests']=[]
     for tupl in ini.items('interests'):
         config['interests']=config['interests']+tupl[1].split('|')
-    config['interests']=filter(None, config['interests']) # remove empty elements
+    config['interests']=list(filter(None, config['interests'])) # remove empty elements
     config['filter']=[]
     for tupl in ini.items('filter'):
         config['filter']=config['filter']+tupl[1].split('|')
-    config['filter']=filter(None, config['filter']) # remove empty elements
+    config['filter']=list(filter(None, config['filter'])) # remove empty elements
     config['mallfilter']=[]
     for tupl in ini.items('mallfilter'):
         config['mallfilter']=config['mallfilter']+tupl[1].split('|')
-    config['mallfilter']=filter(None, config['mallfilter']) # remove empty elements
+    config['mallfilter']=list(filter(None, config['mallfilter'])) # remove empty elements
     config['max_num_get']=ini.getint('advance','max_num_get') if ini.has_option('advance','max_num_get') else 100
     config['max_num_get']=max(5,config['max_num_get'])
     config['append_log']= ini.getboolean('advance','append_log') if ini.has_option('advance','append_log') else False
@@ -232,7 +232,7 @@ def get_data(max_item=100,before_timesort=0,after_timesort=0,verbose=0,req_sessi
             if u'name' in t.keys(): tags.add(t[u'name'])
         for t in item['article_tese_tags'] if u'article_tese_tags' in item.keys() else []:
             if u'name' in t.keys(): tags.add(t[u'name'])
-        if u'article_category' in item.keys() and u'title' in item[u'article_category'].keys():
+        if u'article_category' in item.keys() and u'title' in item[u'article_category']:
             tags.add(item[u'article_category'][u'title'])
         # article_list.gtm.cates_str is not considered yet, because its category has so many tags that
         #        I am afraid of false positives
