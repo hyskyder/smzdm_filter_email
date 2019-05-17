@@ -44,9 +44,5 @@ verbose=2
 
 ```
 
-已测试平台：
-* python 2.7.12 (ubuntu)
-* python 2.7.13 (windows)
-
 依赖：
 * requests (pip install requests)
