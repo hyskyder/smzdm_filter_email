@@ -297,7 +297,7 @@ def filter_item(data,field,keywords):
         if any(word in item[field] for word in keywords)
     ]
     if data['filteredBy'+field]:
-        INFO('Filtered items by {}: '.format(field) + '|'.join(data['filteredBy'+field]))
+        INFO('Filtered {} items by {}: '.format(len(data['filteredBy'+field]),field) + '|'.join(data['filteredBy'+field]))
     data['itemlist']=[ item
         for item in data['itemlist']
         if not any(word in item[field] for word in keywords)
@@ -415,6 +415,9 @@ if __name__ == "__main__":
     res = filter_item(res,field='mall', keywords=config['mallfilter'])
 
     INFO("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
+        res['num_interest'], res['num_item'], res['num_get'], res['num_ignore'])
+    )
+    print("interest={!s}, item={!s}, get={!s}, ignore={!s}".format(
         res['num_interest'], res['num_item'], res['num_get'], res['num_ignore'])
     )
     if (res['num_interest']+res['num_item'])>0:
